@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Prototipo Criptográfico AES/RSA - UACJ</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsencrypt/3.3.2/jsencrypt.min.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; background: #f4f4f4; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        textarea { width: 100%; height: 80px; margin: 10px 0; }
+        button { background: #003366; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #0055aa; }
+    </style>
+</head>
+<body>
+    <h1>Seguridad en Cómputo: Algoritmos Criptográficos</h1>
+    
+    <div class="card">
+        <h3>1. Generar Llaves RSA (Clave Pública)</h3>
+        <button onclick="generateRSA()">Generar Par de Llaves</button>
+        <p>Llave Pública (Compartir):</p>
+        <textarea id="publicKey" readonly></textarea>
+        <p>Llave Privada (Guardar en secreto):</p>
+        <textarea id="privateKey" readonly></textarea>
+    </div>
+
+    <div class="card">
+        <h3>2. Cifrado Híbrido (AES + RSA)</h3>
+        <p>Mensaje a cifrar:</p>
+        <textarea id="msgInput" placeholder="Escribe tu mensaje secreto aquí..."></textarea>
+        <button onclick="encryptProcess()">Cifrar Mensaje</button>
+        <p>Resultado (Criptograma + Llave AES cifrada):</p>
+        <textarea id="encryptedOutput" readonly></textarea>
+    </div>
+
+    <script>
+        let crypt = new JSEncrypt({default_key_size: 1024});
+
+        function generateRSA() {
+            crypt.getKey();
+            document.getElementById('publicKey').value = crypt.getPublicKey();
+            document.getElementById('privateKey').value = crypt.getPrivateKey();
+        }
+
+        function encryptProcess() {
+            const message = document.getElementById('msgInput').value;
+            const pubKey = document.getElementById('publicKey').value;
+
+            if(!pubKey) return alert("Primero genera las llaves RSA");
+
+            // 1. Generar una llave simétrica AES temporal (Concepto de clave privada)
+            const aesKey = CryptoJS.lib.WordArray.random(16).toString();
+
+            // 2. Cifrar el mensaje con AES (Rápido para datos grandes)
+            const encryptedMsg = CryptoJS.AES.encrypt(message, aesKey).toString();
+
+            // 3. Cifrar la llave AES con la Pública de RSA (Seguridad de transporte)
+            crypt.setPublicKey(pubKey);
+            const encryptedAESKey = crypt.encrypt(aesKey);
+
+            document.getElementById('encryptedOutput').value = 
+                "LLAVE_AES_CIFRADA:\n" + encryptedAESKey + "\n\nMENSAJE_CIFRADO:\n" + encryptedMsg;
+        }
+    </script>
+</body>
+</html>
