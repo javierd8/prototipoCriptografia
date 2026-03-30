@@ -2,36 +2,52 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Prototipo Criptográfico AES/RSA - UACJ</title>
+    <title>Prototipo Criptográfico AES/RSA</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsencrypt/3.3.2/jsencrypt.min.js"></script>
     <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; background: #f4f4f4; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        textarea { width: 100%; height: 80px; margin: 10px 0; }
-        button { background: #003366; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 20px auto; padding: 20px; background: #f0f2f5; color: #333; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 25px; border-top: 5px solid #003366; }
+        h1, h2 { color: #003366; text-align: center; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; padding: 10px; box-sizing: border-box; font-family: monospace; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        button { flex: 1; background: #003366; color: white; border: none; padding: 12px; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.3s; }
         button:hover { background: #0055aa; }
+        .decrypt-section { border-top: 5px solid #d9534f; }
+        label { font-weight: bold; display: block; margin-top: 15px; }
     </style>
 </head>
 <body>
-    <h1>Seguridad en Cómputo: Algoritmos Criptográficos</h1>
+    <h1>Seguridad en Cómputo: Prototipo Criptográfico</h1>
     
     <div class="card">
-        <h3>1. Generar Llaves RSA (Clave Pública)</h3>
-        <button onclick="generateRSA()">Generar Par de Llaves</button>
-        <p>Llave Pública (Compartir):</p>
-        <textarea id="publicKey" readonly></textarea>
-        <p>Llave Privada (Guardar en secreto):</p>
-        <textarea id="privateKey" readonly></textarea>
+        <h2>1. Generación de Llaves (RSA)</h2>
+        <button onclick="generateRSA()">Generar Par de Llaves RSA</button>
+        <label>Llave Pública (Cifra la llave AES):</label>
+        <textarea id="publicKey" readonly placeholder="Aquí aparecerá la llave pública..."></textarea>
+        <label>Llave Privada (Descifra la llave AES):</label>
+        <textarea id="privateKey" readonly placeholder="Aquí aparecerá la llave privada..."></textarea>
     </div>
 
     <div class="card">
-        <h3>2. Cifrado Híbrido (AES + RSA)</h3>
-        <p>Mensaje a cifrar:</p>
-        <textarea id="msgInput" placeholder="Escribe tu mensaje secreto aquí..."></textarea>
-        <button onclick="encryptProcess()">Cifrar Mensaje</button>
-        <p>Resultado (Criptograma + Llave AES cifrada):</p>
-        <textarea id="encryptedOutput" readonly></textarea>
+        <h2>2. Cifrado (Envío)</h2>
+        <label>Mensaje (Entrada):</label>
+        <textarea id="msgInput" placeholder="Escribe el mensaje que deseas proteger..."></textarea>
+        <button onclick="encryptProcess()">Ejecutar Cifrado AES + RSA</button>
+        
+        <label>Llave AES Cifrada (con RSA):</label>
+        <textarea id="encAesKeyOutput" readonly></textarea>
+        <label>Mensaje Cifrado (con AES):</label>
+        <textarea id="encMsgOutput" readonly></textarea>
+    </div>
+
+    <div class="card decrypt-section">
+        <h2>3. Descifrado (Recepción)</h2>
+        <p><small>Para probar, los datos de arriba se copiarán aquí automáticamente al presionar el botón.</small></p>
+        <button onclick="decryptProcess()" style="background: #d9534f;">Ejecutar Descifrado RSA + AES</button>
+        
+        <label>Mensaje Original Descifrado:</label>
+        <textarea id="finalDecryptedMsg" readonly style="background: #e9f7ef; border: 1px solid #28a745;"></textarea>
     </div>
 
     <script>
@@ -46,21 +62,38 @@
         function encryptProcess() {
             const message = document.getElementById('msgInput').value;
             const pubKey = document.getElementById('publicKey').value;
+            if(!message || !pubKey) return alert("Ingresa un mensaje y genera las llaves primero.");
 
-            if(!pubKey) return alert("Primero genera las llaves RSA");
-
-            // 1. Generar una llave simétrica AES temporal (Concepto de clave privada)
+            // A. Cifrar con AES
             const aesKey = CryptoJS.lib.WordArray.random(16).toString();
-
-            // 2. Cifrar el mensaje con AES (Rápido para datos grandes)
             const encryptedMsg = CryptoJS.AES.encrypt(message, aesKey).toString();
 
-            // 3. Cifrar la llave AES con la Pública de RSA (Seguridad de transporte)
+            // B. Cifrar clave AES con RSA
             crypt.setPublicKey(pubKey);
             const encryptedAESKey = crypt.encrypt(aesKey);
 
-            document.getElementById('encryptedOutput').value = 
-                "LLAVE_AES_CIFRADA:\n" + encryptedAESKey + "\n\nMENSAJE_CIFRADO:\n" + encryptedMsg;
+            document.getElementById('encAesKeyOutput').value = encryptedAESKey;
+            document.getElementById('encMsgOutput').value = encryptedMsg;
+        }
+
+        function decryptProcess() {
+            const privKey = document.getElementById('privateKey').value;
+            const encAesKey = document.getElementById('encAesKeyOutput').value;
+            const encMsg = document.getElementById('encMsgOutput').value;
+
+            if(!privKey || !encAesKey || !encMsg) return alert("Faltan datos para descifrar.");
+
+            // C. Descifrar clave AES con RSA
+            crypt.setPrivateKey(privKey);
+            const decryptedAesKey = crypt.decrypt(encAesKey);
+
+            if(!decryptedAesKey) return alert("Error: La llave privada no coincide.");
+
+            // D. Descifrar mensaje con AES
+            const bytes = CryptoJS.AES.decrypt(encMsg, decryptedAesKey);
+            const originalText = bytes.toString(CryptoJS.enc.Utf8);
+
+            document.getElementById('finalDecryptedMsg').value = originalText;
         }
     </script>
 </body>
